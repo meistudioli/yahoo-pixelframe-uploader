@@ -513,6 +513,7 @@ export class YahooPixelframeUploader extends HTMLElement {
       s3.upload(params, (err, data) => {
         if (err) {
           reject(err);
+          return;
         }
 
         if (data) {
@@ -649,6 +650,7 @@ export class YahooPixelframeUploader extends HTMLElement {
   }
 
   async _onFilesChange(evt) {
+    const { input } = this.#nodes;
     const {
       target: { files }
     } = evt;
@@ -663,7 +665,6 @@ export class YahooPixelframeUploader extends HTMLElement {
       return;
     }
 
-    const { input } = this.#nodes;
     const results = await Promise.all(
       Array.from(files).map(
         (file) => {
