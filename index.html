@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Web Component: &lt;yahoo-pixelframe-uploader /> - web components based images / videos uploader</title>
+<meta name="description" content="<yahoo-pixelframe-uploader /> is a images / video uploader. It's a none UI web component. That means developers could design the whole stuff through <yahoo-pixelframe-uploader /> dispatch custom events." />
+<script type="module" src="https://unpkg.com/msc-circle-progress/mjs/wc-msc-circle-progress.js"></script>
+<script type="module" src="mjs/wc-yahoo-pixelframe-uploader.js"></script>
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/wc-base.css">
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/layers/defaults.css">
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/layers/buttons.css">
+<style>
+#hd,#ft{display:none;}
+body{position:relative;inline-size:100vw;block-size:100vh;margin:0;}
+
+.wrap{inline-size:100%;max-inline-size:min(800px, calc(100% - 2em));box-sizing:border-box;}
+
+.demo-wrap {
+  --count: 4;
+
+  inline-size: 100%;
+  container-type: inline-size;
+
+  @container (width >= 600px) {
+    .gallery {
+      --count: 5;
+    }
+  }
+
+  @container (width >= 800px) {
+    .gallery {
+      --count: 6;
+    }
+  }
+
+  .button__wrap {
+    --accent-color: var(--dory);
+    --background-color: rgba(220 226 240);
+    --loader-display: none;
+    --button-text: 'UPLOAD';
+
+    --opacity-normal: 0;
+    --opacity-active: 1;
+    --opacity: var(--opacity-normal);
+
+    --pointer-events-normal: none; 
+    --pointer-events-active: auto; 
+    --pointer-events: var(--pointer-events-normal);
+
+    --tip: 'Drop images / videos here.';
+
+    position: relative;
+    outline: 0 none;
+    inline-size: 100%;
+    aspect-ratio: 16/9;
+    display: grid;
+    place-content: center;
+    border-radius: 1em;
+    background-color: var(--background-color);
+    overflow: hidden;
+
+    @media (prefers-color-scheme: dark) {
+      --background-color: rgba(29 34 40);
+      --accent-color: 75 168 248;
+    }
+
+    &:has([inert]) {
+      --loader-display: block;
+      --button-text: 'UPLOADING';
+    }
+
+    &.button__wrap--over {
+      --opacity: var(--opacity-active);
+      --pointer-events: var(--pointer-events-active);
+    }
+
+    @media (hover: hover) {
+      &:focus {
+        --opacity: var(--opacity-active);
+        --pointer-events: var(--pointer-events-active);
+
+        --tip: 'Paste images / videos here.';
+      }
+    }
+
+    &::before {
+      content: var(--tip);
+
+      position: absolute;
+      inset: 0;
+      font-size: 1.125em;
+      color: rgba(255 255 255);
+      background-color: rgba(0 0 0/.75);
+      z-index: 1;
+      pointer-events: var(--pointer-events);
+
+      display: grid;
+      place-content: center;
+
+      opacity: var(--opacity);
+      will-change: opacity;
+      transition: opacity 200ms ease;
+    }
+
+    /* https://css-loaders.com/dots/ */
+    .loader {
+      width: 20px;
+      aspect-ratio: 2;
+      --_g: no-repeat radial-gradient(circle closest-side, rgba(var(--accent-color)) 90%, rgba(var(--accent-color)/0));
+      background: 
+        var(--_g) 0%   50%,
+        var(--_g) 50%  50%,
+        var(--_g) 100% 50%;
+      background-size: calc(100%/3) 50%;
+      animation: l3 1s infinite linear;
+      display: var(--loader-display);
+    }
+
+    .buttons[data-type='secondary1'] {
+      --default-text-color: rgba(var(--accent-color));
+    }
+
+    .buttons--upload {
+      gap: .5em;
+
+      em {
+        font-size: 0;
+        inline-size: 24px;
+        aspect-ratio: 1/1;
+        display:block;
+        background-color: rgba(var(--accent-color));
+        overflow: hidden;
+        clip-path: path('M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 9.67l1.69 2.26 2.48-3.1L19 15H9zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z');
+      }
+
+      span::before {
+        content: var(--button-text);
+      }
+    }
+  }
+
+  .gallery {
+    --gap: .5em;
+    /*--count: 4;*/
+    --unit-size: calc((100% - ((var(--count) - 1) * var(--gap))) / var(--count));
+
+    --border-radius: 1em;
+    --background-color: rgba(0 0 0/.5);
+
+    --progress-size: 20px;
+    --progress-margin-size: 4px;
+    --progress-wrap-size: calc(var(--progress-size) + (var(--progress-margin-size) * 2));
+
+    --progress-opacity-normal: 0;
+    --progress-opacity-active: 1;
+    --progress-opacity: var(--progress-opacity-normal);
+
+    --button-opacity-normal: 0;
+    --button-opacity-active: 1;
+    --button-opacity: var(--button-opacity-normal);
+    --button-pointer-events: none;
+
+    /*display: flex;*/
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    margin-block: 1em;
+    display: none;
+
+    &:has(.gallery-unit) {
+      border-block-start: 1px solid var(--intro-text);
+      padding-block-start: 1em;
+      display: flex;
+    }
+
+    .gallery-unit {
+      --warn-bar-size: .75em;
+      --warn-bar-strip-start-color: #de2f21;
+      --warn-bar-strip-end-color: rgba(0 0 0);
+      --warn-scale-normal: .001;
+      --warn-scale-active: 1;
+      --warn-scale: var(--warn-scale-normal);
+
+      flex-shrink: 0;
+      position: relative;
+      inline-size: var(--unit-size);
+      aspect-ratio: 1/1;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+
+      &[data-status=processing] {
+        --progress-opacity: var(--progress-opacity-active);
+      }
+
+      &[data-status=done] {
+        --button-opacity: var(--button-opacity-active);
+        --button-pointer-events: auto;
+      }
+
+      &[data-status=error] {
+        --button-opacity: var(--button-opacity-active);
+        --button-pointer-events: auto;
+        --warn-scale: var(--warn-scale-active);
+      }
+
+      img {
+        inline-size: 100%;
+        block-size: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      .gallery-unit__button {
+        --size: 28px;
+
+        flex-shrink: 0;
+        font-size: 0;
+        appearance: none;
+        box-shadow: unset;
+        border: unset;
+        background: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        pointer-events: auto;
+        margin: 0;
+        padding: 0;
+        outline: 0 none;
+
+        position: absolute;
+        inset-inline-end: 4px;
+        inset-block-start: 4px;
+        inline-size: var(--size);
+        aspect-ratio: 1/1;
+        border-radius: var(--size);
+        background-color: var(--background-color);
+        display: grid;
+        place-content: center;
+        pointer-events: var(--button-pointer-events);
+        opacity: var(--button-opacity);
+        transition: opacity 200ms ease;
+        will-change: opacity;
+
+        &::before {
+          content: '';
+          inline-size: 24px;
+          block-size: 24px;
+          display: block;
+          clip-path: path('M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z');
+          background-color: #fff;
+          scale: .83;
+        }
+
+        &:active {
+          scale: .85;
+        }
+      }
+
+      .gallery-unit__progress {
+        --msc-circle-progress-font-color: transparent;
+        --msc-circle-progress-color: #fff;
+
+        position: absolute;
+        inset-inline-end: 4px;
+        inset-block-end: 4px;
+        inline-size: var(--progress-wrap-size);
+        block-size: var(--progress-wrap-size);
+        border-radius: var(--progress-wrap-size);
+        background-color: var(--background-color);
+        scale: .85;
+        opacity: var(--progress-opacity);
+        transition: opacity 200ms ease;
+        will-change: opacity;
+        pointer-events: none;
+
+        msc-circle-progress {
+          inline-size: var(--progress-size);
+          margin-inline-start: var(--progress-margin-size);
+          margin-block-start: var(--progress-margin-size);
+        }
+      }
+
+      .gallery-unit__duration {
+        position: absolute;
+        inset: auto auto 0 0;
+        inline-size: 100%;
+        color: rgba(255 255 255);
+        font-size: .75em;
+        line-height: 1.8;
+        box-sizing: border-box;
+        padding-inline: 12px;
+        text-align: end;
+        background-color: rgba(0 0 0/.75);
+        pointer-events: none;
+        opacity: var(--button-opacity);
+        transition: opacity 200ms ease;
+        will-change: opacity;
+      }
+
+      .gallery-unit__warn {
+        position: absolute;
+        inset-inline-start: 0;
+        inset-block-start: 0;
+        inline-size: 100%;
+        block-size: 100%;
+        background-color: rgba(255 0 0/.3);
+        pointer-events: none;
+        animation: animate-warn 1s ease-in-out infinite;
+        transition: transform 150ms ease-in-out;
+        will-change: opacity,transform;
+        transform: scale(var(--warn-scale));
+        border-radius: var(--unit-border-radius);
+        overflow: hidden;
+        pointer-events: none;
+
+        &::before,
+        &::after {
+          position: absolute;
+          inset-inline-start: 0;
+          inline-size: 100%;
+          block-size: var(--warn-bar-size);
+          content: '';
+          background-size: 24px var(--warn-bar-size);
+          background-image: -webkit-linear-gradient(-45deg, var(--warn-bar-strip-start-color) 33%, var(--warn-bar-strip-end-color) 33%, var(--warn-bar-strip-end-color) 66%, var(--warn-bar-strip-start-color) 66%);
+        }
+
+        &::before {
+          inset-block-start: 0;
+          animation: animate-warn-bar-block-start 60s linear infinite;
+        }
+
+        &::after {
+          inset-block-end: 0;
+          animation: animate-warn-bar-block-end 60s linear infinite;
+        }
+
+        .gallery-unit__warn__span {
+          position: absolute;
+          inset-block: 0;
+          margin: auto;
+          inline-size: 100%;
+          block-size: fit-content;
+          display: block;
+          background-color: rgba(0 0 0/.75);
+          color: var(--warn-bar-strip-start-color);
+          line-height: 2.2;
+          text-align: center;
+          font-size: 1em;
+          font-weight: 800;
+          border-block-start: 2px solid var(--warn-bar-strip-start-color);
+          border-block-end: 2px solid var(--warn-bar-strip-start-color);
+        }
+      }
+    }
+  }
+}
+
+@keyframes animate-warn-bar-block-start {
+  100% { background-position: -3000% 0px; }
+}
+
+@keyframes animate-warn-bar-block-end {
+  100% { background-position: 3000% 0px; }
+}
+
+@keyframes animate-warn {
+  0% { opacity: .5; }
+  50% { opacity: 1; }
+  100%{ opacity: .5; }
+}
+
+@keyframes l3 {
+  20%{background-position:0%   0%, 50%  50%,100%  50%}
+  40%{background-position:0% 100%, 50%   0%,100%  50%}
+  60%{background-position:0%  50%, 50% 100%,100%   0%}
+  80%{background-position:0%  50%, 50%  50%,100% 100%}
+}
+
+yahoo-pixelframe-uploader:not(:defined){display:none;}
+</style>
+</head>
+
+<body class="flex-center">
+<div class="wrap">
+  <div class="demo-wrap">
+    <div class="button__wrap" tabindex="0">
+      <yahoo-pixelframe-uploader>
+        <script type="application/json">
+          {
+            "multiple": true,
+            "limitation": {
+              "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
+              "image": {
+                "minwidth": 100,
+                "minheight": 100,
+                "size": 52428800
+              },
+              "video": {
+                "minwidth": 100,
+                "minheight": 100,
+                "size": 31457280
+              }
+            },
+            "maximagecount": 5,
+            "maxvideocount": 1,
+            "webservice": {
+              "token": {
+                "url": "https://trendr-apac.media.yahoo.com/api/pixelframe/v1/aws/resources/s3/credentials?role=content-upload"
+              },
+              "upload": {
+                "urls": {
+                  "video": "https://trendr-apac.media.yahoo.com/api/pixelframe/v1/videos/upload",
+                  "image": "https://trendr-apac.media.yahoo.com/api/pixelframe/v1/images/upload"
+                },
+                "params": {
+                  "targetType": "rating",
+                  "targetId": "auction2",
+                  "appName": "auction",
+                  "resizingProfile": "bid_seller_logo",
+                  "transcodingProfile": "auction"
+                }
+              }
+            }
+          }
+        </script>
+
+        <button
+          type="button"
+          class="buttons buttons--upload"
+          data-type="secondary1"
+          data-size="large"
+          slot="trigger"
+        >
+          <em>image</em>
+          <span></span>
+          <div class="loader"></div>
+        </button>
+      </yahoo-pixelframe-uploader>
+    </div>
+
+    <div class="gallery"></div>
+
+    <template id="template-gallery-unit">
+      {{#units}}
+      <div class="gallery-unit" data-status="processing" data-id="{{id}}">
+        <img src="{{thumbnail}}" loading="lazy" />
+        <div class="gallery-unit__progress">
+          <msc-circle-progress size="3" value="0" round></msc-circle-progress>
+        </div>
+        <div class="gallery-unit__warn">
+          <span class="gallery-unit__warn__span">ERROR</span>
+        </div>
+        {{#duration}}
+          <em class="gallery-unit__duration">{{duration}}</em>
+        {{/duration}}
+        <button
+          type="button"
+          class="gallery-unit__button"
+        >
+          delete
+        </button>
+      </div>
+      {{/units}}
+    </template>
+  </div>
+</div>
+
+<script type="module">
+import Mustache from 'https://blog.lalacube.com/mei/mjs/mustache.js';
+
+function formatSecondsToHMS(totalSeconds) {
+  totalSeconds = Math.floor(totalSeconds);
+
+  // 計算小時數
+  const hours = Math.floor(totalSeconds / 3600);
+  // 計算剩餘秒數中的分鐘數
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  // 計算剩餘秒數
+  const seconds = totalSeconds % 60;
+
+  // 使用 padStart 補零，確保每個部分都是兩位數
+  const formattedHours = String(hours).padStart(2, '0');
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(seconds).padStart(2, '0');
+
+  return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+}
+
+customElements.whenDefined('yahoo-pixelframe-uploader').then(() => {
+  const uploader = document.querySelector('.demo-wrap yahoo-pixelframe-uploader');
+  const gallery = document.querySelector('.demo-wrap .gallery');
+  const dropzone = document.querySelector('.demo-wrap .button__wrap');
+  const templateUnit = document.querySelector('#template-gallery-unit');
+  const uploaderClass = customElements.get('yahoo-pixelframe-uploader');
+  const { supportedEvents } = uploaderClass;
+
+  gallery.replaceChildren();
+
+  const onDnD = (evt) => {
+    const { type, target } = evt;
+
+    switch (type) {
+      case 'dragover': {
+        if (!uploader.inert) {
+          dropzone.classList.toggle('button__wrap--over', true);
+        }
+        break;
+      }
+
+      case 'dragleave': {
+        dropzone.classList.toggle('button__wrap--over', false);
+        break;
+      }
+    };
+  };
+
+  const handler = (evt) => {
+    const { type, target } = evt;
+
+    switch (type) {
+      case 'paste': {
+        const dataTransfer = evt.clipboardData || window.clipboardData;
+
+        document.body.focus();
+
+        if (uploader.inert) {
+          return;
+        }
+
+        uploader.passFiles(dataTransfer.files);
+        break;
+      }
+
+      case 'dragover': {
+        evt.preventDefault();
+        break;
+      }
+
+      case 'drop': {
+        const { dataTransfer } = evt;
+
+        evt.preventDefault();
+        
+        if (uploader.inert) {
+          return;
+        }
+
+        dropzone.classList.toggle('button__wrap--over', false);
+        uploader.passFiles(dataTransfer.files);
+        break;
+      }
+
+      case 'click': {
+        const button = evt.target.closest('button');
+
+        if (button) {
+          button.closest('.gallery-unit').remove();
+        }
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-process-start': {
+        uploader.inert = true;
+
+        console.log(
+          `%cyahoo-pixelframe-uploader%c > %cyahoo-pixelframe-uploader-process-start%c`,
+          'font-size:12px;line-height:1.3;background:#3a99d8;color:#fff;border-radius:3px;padding:0 4px;',
+          'font-size:12px;line-height:1.3;',
+          'font-size:12px;line-height:1.3;color:#a4f6b7;',
+          'font-size:12px;line-height:1.3;'
+        );
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-process-end': {
+        uploader.inert = false;
+
+        console.log(
+          `%cyahoo-pixelframe-uploader%c > %cyahoo-pixelframe-uploader-process-end%c`,
+          'font-size:12px;line-height:1.3;background:#3a99d8;color:#fff;border-radius:3px;padding:0 4px;',
+          'font-size:12px;line-height:1.3;',
+          'font-size:12px;line-height:1.3;color:#a4f6b7;',
+          'font-size:12px;line-height:1.3;'
+        );
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-done': {
+        const { results } = evt.detail;
+
+        console.log(
+          `%cyahoo-pixelframe-uploader%c > %cyahoo-pixelframe-uploader-done%c`,
+          'font-size:12px;line-height:1.3;background:#3a99d8;color:#fff;border-radius:3px;padding:0 4px;',
+          'font-size:12px;line-height:1.3;',
+          'font-size:12px;line-height:1.3;color:#a4f6b7;',
+          'font-size:12px;line-height:1.3;'
+        );
+
+        console.log(results);
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-pick': {
+        const { picked = [] } = evt.detail;
+
+        const units = picked.reduce(
+          (acc, unit) => {
+            const { id, thumbnail, duration } = unit;
+
+            return acc.concat({
+              id,
+              thumbnail,
+              ...(duration && { duration: formatSecondsToHMS(duration) })
+            });
+          }
+        , []);
+
+        const unitsString = Mustache.render(templateUnit.innerHTML, { units });
+        gallery.insertAdjacentHTML('beforeend', unitsString);
+
+        console.log(
+          `%cyahoo-pixelframe-uploader%c > %cyahoo-pixelframe-uploader-pick%c`,
+          'font-size:12px;line-height:1.3;background:#3a99d8;color:#fff;border-radius:3px;padding:0 4px;',
+          'font-size:12px;line-height:1.3;',
+          'font-size:12px;line-height:1.3;color:#a4f6b7;',
+          'font-size:12px;line-height:1.3;'
+        );
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-progress': {
+        const { id, progress } = evt.detail;
+        const unit = gallery.querySelector(`[data-id=${id}]`);
+        const circleProgress = gallery.querySelector(`[data-id=${id}] msc-circle-progress`);
+
+        if (circleProgress) {
+          circleProgress.value = progress;
+
+          if (progress === 100) {
+            unit.dataset.status = 'done';
+          }
+        }
+        break;
+      }
+
+      case 'yahoo-pixelframe-uploader-error': {
+        const { id } = evt.detail;
+        const unit = gallery.querySelector(`[data-id=${id}]`);
+
+        if (unit) {
+          unit.dataset.status = 'error';
+        }
+
+        console.log(
+          `%cyahoo-pixelframe-uploader%c > %cyahoo-pixelframe-uploader-error%c`,
+          'font-size:12px;line-height:1.3;background:#3a99d8;color:#fff;border-radius:3px;padding:0 4px;',
+          'font-size:12px;line-height:1.3;',
+          'font-size:12px;line-height:1.3;color:#a4f6b7;',
+          'font-size:12px;line-height:1.3;'
+        );
+
+        console.log(evt.detail);
+        break;
+      }
+    };
+  };
+
+  // events
+  supportedEvents.forEach(
+    (event) => {
+      // uploader
+      uploader.addEventListener(event, handler);
+    }
+  );
+
+  ['dragover', 'drop', 'paste'].forEach(
+    (event) => {
+      // dropzone
+      dropzone.addEventListener(event, handler, { capture:true });
+    }
+  );
+
+  ['dragover', 'dragleave'].forEach(
+    (event) => {
+      // document.body
+      document.body.addEventListener(event, onDnD, { capture:true });
+    }
+  );
+
+  gallery.addEventListener('click', handler);
+});
+</script>
+</body>
+
+</html>
