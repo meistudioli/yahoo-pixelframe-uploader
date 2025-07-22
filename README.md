@@ -260,6 +260,7 @@ Set webservice config. Web developers could set fetch config for "`token`" or "`
 | passFiles(files) | Pass files which user picked to &lt;yahoo-pixelframe-uploader />. （files should be `blob` format）. |
 
 ## Reference
+- [&lt;yahoo-pixelframe-uploader /> demo](https://blog.lalacube.com/mei/webComponent_yahoo-pixelframe-uploader.html)
 - [YouTube tutorial](https://youtu.be/hc2I_7dYAxA)
 - [Object.groupBy()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/groupBy)
 - [canvas drawImage](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage)
