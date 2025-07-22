@@ -54,6 +54,7 @@ const custumEvents = {
   progress: 'yahoo-pixelframe-uploader-progress',
   done: 'yahoo-pixelframe-uploader-done'
 };
+const isMobile = !window.matchMedia('(hover: hover)').matches;
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -716,21 +717,24 @@ export class YahooPixelframeUploader extends HTMLElement {
       return;
     }
 
-    /*
-    const results = await Promise.all(
-      Array.from(files).map(
-        (file) => {
-          return this.#validation(file);
-        }
-      )
-    );
-    */
-    const results = [];
-    for (const file of files) {
-      const result = await this.#validation(file);
+    let results = [];
 
-      results.push(result);
+    if (isMobile) {
+      for (const file of files) {
+        const result = await this.#validation(file);
+
+        results.push(result);
+      }
+    } else {
+      results = await Promise.all(
+        Array.from(files).map(
+          (file) => {
+            return this.#validation(file);
+          }
+        )
+      );
     }
+
     input.value = '';
 
     const groups = Object?.groupBy(results, ({ type }) => type) || {};
