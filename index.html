@@ -387,18 +387,17 @@ yahoo-pixelframe-uploader:not(:defined){display:none;}
         <script type="application/json">
           {
             "multiple": true,
-            "limitation": {
-              "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
-              "image": {
-                "minwidth": 100,
-                "minheight": 100,
-                "size": 52428800
-              },
-              "video": {
-                "minwidth": 100,
-                "minheight": 100,
-                "size": 31457280
-              }
+            "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
+            "imagelimitation": {
+              "minwidth": 100,
+              "minheight": 100,
+              "size": 52428800
+            },
+            "videolimitation": {
+              "minwidth": 100,
+              "minheight": 100,
+              "size": 314572800,
+              "duration": 3600
             },
             "maximagecount": 5,
             "maxvideocount": 1,

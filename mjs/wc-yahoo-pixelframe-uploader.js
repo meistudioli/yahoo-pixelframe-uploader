@@ -11,22 +11,20 @@ import './aws-sdk-2.633.0.min.js';
 
 const defaults = {
   multiple: false,
-  limitation: {
-    accept: '.jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm',
-    image: {
-      minwidth: 100,
-      minheight: 100,
-      size: 1024 * 1024 * 10
-    },
-    video: {
-      minwidth: 100,
-      minheight: 100,
-      size: 1024 * 1024 * 30,
-      duration: 60 * 60
-    }
+  accept: '.jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm',
+  imagelimitation: {
+    minwidth: 100,
+    minheight: 100,
+    size: 1024 * 1024 * 50
   },
-  maximagecount: 2,
-  maxvideocount: 1,
+  videolimitation: {
+    minwidth: 100,
+    minheight: 100,
+    size: 1024 * 1024 * 300,
+    duration: 60 * 60
+  },
+  maximagecount: 5,
+  maxvideocount: 5,
   webservice: {
     token: {
       url: 'https://trendr-apac.media.yahoo.com/api/pixelframe/v1/aws/resources/s3/credentials?role=content-upload'
@@ -47,7 +45,7 @@ const defaults = {
 };
 
 const booleanAttrs = ['multiple']; // booleanAttrs default should be false
-const objectAttrs = ['limitation', 'webservice'];
+const objectAttrs = ['imagelimitation', 'videolimitation', 'webservice'];
 const custumEvents = {
   pick: 'yahoo-pixelframe-uploader-pick',
   error: 'yahoo-pixelframe-uploader-error',
@@ -168,7 +166,6 @@ export class YahooPixelframeUploader extends HTMLElement {
       }
     } else {
       switch (attrName) {
-        case 'limitation':
         case 'webservice': {
           let values;
           try {
@@ -182,10 +179,32 @@ export class YahooPixelframeUploader extends HTMLElement {
           break;
         }
 
+        case 'imagelimitation':
+        case 'videolimitation': {
+          let values;
+          try {
+            values = JSON.parse(newValue);
+          } catch(err) {
+            console.warn(`${_wcl.classToTagName(this.constructor.name)}: ${err.message}`);
+            values = Array.isArray(defaults[attrName]) ? [ ...defaults[attrName] ] : { ...defaults[attrName] };
+          }
+
+          this.#config[attrName] = {
+            ...defaults[attrName],
+            ...values
+          };
+          break;
+        }
+
         case 'maximagecount':
         case 'maxvideocount': {
           const num = +newValue;
           this.#config[attrName] = (isNaN(num) || num < 0) ? defaults[attrName] : num;
+          break;
+        }
+
+        case 'accept': {
+          this.#config[attrName] = newValue.length > 0 ? newValue : defaults[attrName];
           break;
         }
       }
@@ -207,10 +226,8 @@ export class YahooPixelframeUploader extends HTMLElement {
         break;
       }
 
-      case 'limitation': {
-        const { accept } = this.limitation;
-
-        input.setAttribute('accept', accept);
+      case 'accept': {
+        input.setAttribute('accept', this.accept);
         break;
       }
     }
@@ -249,21 +266,50 @@ export class YahooPixelframeUploader extends HTMLElement {
     }
   }
 
-  set limitation(value) {
+  set imagelimitation(value) {
     if (value) {
       const newValue = {
-        ...defaults.limitation,
-        ...this.limitation,
+        ...defaults.imagelimitation,
+        ...this.imagelimitation,
         ...(typeof value === 'string' ? JSON.parse(value) : value)
       };
-      this.setAttribute('limitation', JSON.stringify(newValue));
+      this.setAttribute('imagelimitation', JSON.stringify(newValue));
     } else {
-      this.removeAttribute('limitation');
+      this.removeAttribute('imagelimitation');
     }
   }
 
-  get limitation() {
-    return this.#config.limitation;
+  get imagelimitation() {
+    return this.#config.imagelimitation;
+  }
+
+  set videolimitation(value) {
+    if (value) {
+      const newValue = {
+        ...defaults.videolimitation,
+        ...this.videolimitation,
+        ...(typeof value === 'string' ? JSON.parse(value) : value)
+      };
+      this.setAttribute('videolimitation', JSON.stringify(newValue));
+    } else {
+      this.removeAttribute('videolimitation');
+    }
+  }
+
+  get videolimitation() {
+    return this.#config.videolimitation;
+  }
+
+  set accept(value) {
+    if (value) {
+      this.setAttribute('accept', value);
+    } else {
+      this.removeAttribute('accept');
+    }
+  }
+
+  get accept() {
+    return this.#config.accept;
   }
 
   set webservice(value) {
@@ -336,47 +382,50 @@ export class YahooPixelframeUploader extends HTMLElement {
   async #fetchFileInfo({ type, file }) {
     return new Promise(
       (resolve, reject) => {
-        const reader = new FileReader();
+        let host;
 
-        reader.onload = (evt) => {
-          const dataURL = evt.target.result;
-          const host = type === 'image'
-            ? new Image()
-            : document.createElement('video');
+        if (type === 'image') {
+          host = new Image();
 
-          if (type === 'image') {
-            host.onload = () => {
-              const { naturalWidth, naturalHeight } = host;
+          host.onload = async () => {
+            const { naturalWidth:width, naturalHeight:height } = host;
+            const thumbnail = await this.#getThumbnail({ type, width, height, dataURL:host.src });
 
-              resolve({
-                type,
-                dataURL,
-                width: naturalWidth,
-                height: naturalHeight
-              });
-            };
-          } else {
-            host.onloadeddata = () => {
-              const { videoWidth, videoHeight, duration } = host;
+            window.URL.revokeObjectURL(host.src);
 
-              resolve({
-                type,
-                dataURL,
-                duration,
-                width: videoWidth,
-                height: videoHeight
-              });
-            };
-          }
-
-          host.onerror = () => {
-            reject(new Error('fetch file info error.'));
+            resolve({
+              type,
+              thumbnail,
+              width,
+              height
+            });
           };
+        } else {
+          host = document.createElement('video');
+          host.preload = 'metadata';
 
-          host.src= dataURL;
+          host.onloadedmetadata = async () => {
+            const { videoWidth:width, videoHeight:height, duration } = host;
+            const thumbnail = await this.#getThumbnail({ type, width, height, dataURL:host.src });
+
+            window.URL.revokeObjectURL(host.src);
+
+            resolve({
+              type,
+              thumbnail,
+              width,
+              height,
+              duration
+            });
+          };
+        }
+
+        host.onerror = () => {
+          window.URL.revokeObjectURL(host.src);
+          reject(new Error('fetch file info error.'));
         };
 
-        reader.readAsDataURL(file);
+        host.src = window.URL.createObjectURL(file);
       }
     );
   }
@@ -419,7 +468,8 @@ export class YahooPixelframeUploader extends HTMLElement {
           negative.src = dataURL;
         } else {
           negative.onloadeddata = () => {
-            const timer = /firefox/i.test(navigator.userAgent) ? 100 : 0;
+            // need to set buffer time
+            const timer = /firefox/i.test(navigator.userAgent) ? 250 : 100;
 
             setTimeout(
               () => {
@@ -427,6 +477,7 @@ export class YahooPixelframeUploader extends HTMLElement {
                 resolve(canvas.toDataURL('image/jpeg', 0.75));
               }
             , timer);
+
           };
 
           negative.src = dataURL;
@@ -448,8 +499,8 @@ export class YahooPixelframeUploader extends HTMLElement {
         throw new Error(`file type not allowed.`);
       }
 
-      const { type, dataURL, width, height, duration } = await this.#fetchFileInfo({ type: fileType, file });
-      const { minwidth, minheight, size, duration: maxduration } = this.limitation[type];
+      const { type, thumbnail, width, height, duration } = await this.#fetchFileInfo({ type: fileType, file });
+      const { minwidth, minheight, size, duration: maxduration } = (type === 'image') ? this.imagelimitation : this.videolimitation;
 
       // size
       if (file.size > size) {
@@ -474,9 +525,8 @@ export class YahooPixelframeUploader extends HTMLElement {
       response = {
         type,
         file,
-        dataURL,
+        thumbnail,
         id: this.#getUnitId(),
-        thumbnail: await this.#getThumbnail({ type, width, height, dataURL }),
         ...(duration && { duration })
       };
     } catch(err) {
@@ -661,6 +711,7 @@ export class YahooPixelframeUploader extends HTMLElement {
     }
 
     if (this.processing) {
+      input.value = '';
       this.#fireEvent(custumEvents.error, { message: 'file(s) uploading, try later.' });
       return;
     }
@@ -672,6 +723,7 @@ export class YahooPixelframeUploader extends HTMLElement {
         }
       )
     );
+    input.value = '';
 
     const groups = Object?.groupBy(results, ({ type }) => type) || {};
     const { image = [], video = [] } = groups;

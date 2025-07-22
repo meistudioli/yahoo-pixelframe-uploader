@@ -34,22 +34,20 @@ Put &lt;yahoo-pixelframe-uploader /> into HTML document.
   <script type="application/json">
     {
       "multiple": true,
-      "limitation": {
-        "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
-        "image": {
-          "minwidth": 100,
-          "minheight": 100,
-          "size": 52428800
-        },
-        "video": {
-          "minwidth": 100,
-          "minheight": 100,
-          "size": 31457280,
-          "duration": 3600
-        }
+      "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
+      "imagelimitation": {
+        "minwidth": 100,
+        "minheight": 100,
+        "size": 52428800
       },
-      "maximagecount": 2,
-      "maxvideocount": 1,
+      "videolimitation": {
+        "minwidth": 100,
+        "minheight": 100,
+        "size": 314572800,
+        "duration": 3600
+      },
+      "maximagecount": 5,
+      "maxvideocount": 5,
       "webservice": {
         "token": {
           "url": "https://trendr-apac.media.yahoo.com/api/pixelframe/v1/aws/resources/s3/credentials?role=content-upload"
@@ -106,19 +104,17 @@ nodeB.multiple = false;
 // new instance with Class & default config
 const config = {
   "multiple": true,
-  "limitation": {
-    "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
-    "image": {
-      "minwidth": 100,
-      "minheight": 100,
-      "size": 52428800
-    },
-    "video": {
-      "minwidth": 100,
-      "minheight": 100,
-      "size": 31457280,
-      "duration": 3600
-    }
+  "accept": ".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm",
+  "imagelimitation": {
+    "minwidth": 100,
+    "minheight": 100,
+    "size": 52428800
+  },
+  "videolimitation": {
+    "minwidth": 100,
+    "minheight": 100,
+    "size": 314572800,
+    "duration": 3600
   },
   "maximagecount": 2,
   "maxvideocount": 1,
@@ -164,16 +160,41 @@ Set multiple or not. This should be boolean string. User could pick multi-files 
 </yahoo-pixelframe-uploader>
 ```
 
-- limitation
+- accept
 
-Set limitation. This should be JSON boolean string. &lt;yahoo-pixelframe-uploader /> will check image / video specs by this setting.
-
-`accept`：Set accept for input[type=file].\
-`image`：Set image's limitation. It contains "**minwidth**"、"**minheight**" & "**size**".\
-`video`：Set video's limitation. It contains "**minwidth**"、"**minheight**"、"**size**" & "**duration**".
+Set accept. Same as `input[accept]`. Developers could set this to filter files by type.
 
 ```html
-<yahoo-pixelframe-uploader limitation='{"accept":".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm","image":{"minwidth":100,"minheight":100,"size":52428800},"video":{"minwidth":100,"minheight":100,"size":31457280}}'>
+<yahoo-pixelframe-uploader accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.mov,.mp4,.ogg,.webm">
+  ...
+</yahoo-pixelframe-uploader>
+```
+
+- imagelimitation
+
+Set imagelimitation. This should be JSON boolean string. &lt;yahoo-pixelframe-uploader /> will check image specs by this setting.
+
+`minwidth`：image width must bigger than this.\
+`minheight`：image height must bigger than this.\
+`size`：image file size must under this.
+
+```html
+<yahoo-pixelframe-uploader imagelimitation='{"minwidth":100,"minheight":100,"size":52428800}'>
+  ...
+</yahoo-pixelframe-uploader>
+```
+
+- videolimitation
+
+Set videolimitation. This should be JSON boolean string. &lt;yahoo-pixelframe-uploader /> will check video specs by this setting.
+
+`minwidth`：video width must bigger than this.\
+`minheight`：video height must bigger than this.\
+`size`：video file size must under this.\
+`duration`：video duration must smaller than this.
+
+```html
+<yahoo-pixelframe-uploader videolimitation='{"minwidth":100,"minheight":100,"size":314572800,"duration":3600}'>
   ...
 </yahoo-pixelframe-uploader>
 ```
@@ -215,10 +236,12 @@ Set webservice config. Web developers could set fetch config for "`token`" or "`
 | Property Name | Type | Description |
 | ----------- | ----------- | ----------- |
 | multiple | Boolean | Getter / Setter &lt;yahoo-pixelframe-uploader />'s multiple state. |
-| limitation | Object | Getter &lt;yahoo-pixelframe-uploader />'s limitation. &lt;yahoo-pixelframe-uploader /> will check image / video specs by this setting. |
-| maximagecount | Integer | Setter / Getter &lt;yahoo-pixelframe-uploader />'s maximagecount. &lt;yahoo-pixelframe-uploader /> will restrict image count which user picked each time. |
-| maxvideocount | Integer | Setter / Getter &lt;yahoo-pixelframe-uploader />'s maxvideocount. &lt;yahoo-pixelframe-uploader /> will restrict video count which user picked each time. |
-| webservice | Object | Setter / Getter &lt;yahoo-pixelframe-uploader />'s webservice. Web developers could set fetch config for "`token`" or "`upload`" web service. &lt;yahoo-pixelframe-uploader /> will restrict video count which user picked each time. |
+| accept | String | Getter / Setter &lt;yahoo-pixelframe-uploader />'s accept. |
+| imagelimitation | Object | Getter / Setter &lt;yahoo-pixelframe-uploader />'s imagelimitation. &lt;yahoo-pixelframe-uploader /> will check image specs by this setting. |
+| videolimitation | Object | Getter / Setter &lt;yahoo-pixelframe-uploader />'s videolimitation. &lt;yahoo-pixelframe-uploader /> will check video specs by this setting. |
+| maximagecount | Integer | Getter / Setter &lt;yahoo-pixelframe-uploader />'s maximagecount. &lt;yahoo-pixelframe-uploader /> will restrict image count which user picked each time. |
+| maxvideocount | Integer | Getter / Setter &lt;yahoo-pixelframe-uploader />'s maxvideocount. &lt;yahoo-pixelframe-uploader /> will restrict video count which user picked each time. |
+| webservice | Object | Getter / Setter &lt;yahoo-pixelframe-uploader />'s webservice. Web developers could set fetch config for "`token`" or "`upload`" web service. &lt;yahoo-pixelframe-uploader /> will restrict video count which user picked each time. |
 | processing | Boolean | Getter &lt;yahoo-pixelframe-uploader />'s processing state. |
 
 ## Events
@@ -240,11 +263,3 @@ Set webservice config. Web developers could set fetch config for "`token`" or "`
 - [YouTube tutorial](https://youtu.be/hc2I_7dYAxA)
 - [Object.groupBy()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/groupBy)
 - [canvas drawImage](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage)
-
-
-
-
-
-
-
-
