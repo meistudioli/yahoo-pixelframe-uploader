@@ -716,6 +716,7 @@ export class YahooPixelframeUploader extends HTMLElement {
       return;
     }
 
+    /*
     const results = await Promise.all(
       Array.from(files).map(
         (file) => {
@@ -723,6 +724,13 @@ export class YahooPixelframeUploader extends HTMLElement {
         }
       )
     );
+    */
+    const results = [];
+    for (const file of files) {
+      const result = await this.#validation(file);
+
+      results.push(result);
+    }
     input.value = '';
 
     const groups = Object?.groupBy(results, ({ type }) => type) || {};
