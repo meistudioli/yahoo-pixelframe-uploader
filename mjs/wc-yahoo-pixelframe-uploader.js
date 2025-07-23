@@ -38,6 +38,7 @@ const defaults = {
         targetType: 'rating',
         targetId: 'auction2',
         appName: 'auction',
+        resizingProfile: 'bid_seller_logo',
         transcodingProfile: 'auction'
       }
     }
