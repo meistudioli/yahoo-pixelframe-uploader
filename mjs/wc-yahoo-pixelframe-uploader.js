@@ -340,7 +340,7 @@ export class YahooPixelframeUploader extends HTMLElement {
   }
 
   set maximagecount(value) {
-    if (value) {
+    if (typeof value !== 'undefined') {
       this.setAttribute('maximagecount', value);
     } else {
       this.removeAttribute('maximagecount');
@@ -352,7 +352,7 @@ export class YahooPixelframeUploader extends HTMLElement {
   }
 
   set maxvideocount(value) {
-    if (value) {
+    if (typeof value !== 'undefined') {
       this.setAttribute('maxvideocount', value);
     } else {
       this.removeAttribute('maxvideocount');
