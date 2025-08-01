@@ -7,6 +7,7 @@ import './aws-sdk-2.633.0.min.js';
  reference:
  - Object.groupBy(): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/groupBy
  - canvas: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+ - HTML5 Video loadeddata event does not work in IOS Safari: https://stackoverflow.com/questions/33300294/html5-video-loadeddata-event-does-not-work-in-ios-safari
  */
 
 const defaults = {
@@ -469,6 +470,11 @@ export class YahooPixelframeUploader extends HTMLElement {
 
           negative.src = dataURL;
         } else {
+          negative.autoplay = true;
+          negative.playsInline = true;
+          negative.preload = 'auto';
+          negative.muted = true;
+
           negative.onloadeddata = () => {
             // need to set buffer time
             const timer = /firefox/i.test(navigator.userAgent) ? 250 : 100;
@@ -479,11 +485,18 @@ export class YahooPixelframeUploader extends HTMLElement {
                 resolve(canvas.toDataURL('image/jpeg', 0.75));
               }
             , timer);
-
           };
+
+          negative.style.visibility = 'hidden';
+          negative.style.pointerEvents = 'none';
 
           negative.src = dataURL;
           negative.currentTime = 1;
+
+          // force loading
+          if (typeof negative.load === 'function') {
+            negative.load();
+          }
         }
       }
     );

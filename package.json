@@ -1,6 +1,6 @@
 {
   "name": "yahoo-pixelframe-uploader",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "<yahoo-pixelframe-uploader /> is a images / video uploader. It's a none UI web component. That means developers could design the whole stuff through <yahoo-pixelframe-uploader /> dispatch custom events.",
   "main": "index.html",
   "scripts": {
