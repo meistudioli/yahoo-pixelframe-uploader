@@ -505,6 +505,7 @@ export class YahooPixelframeUploader extends HTMLElement {
   async #validation(file) {
     let response;
 
+    const { name = '' } = file; 
     const fileType = file.type
       .replace(/(.*)\/.*/, '$1')
       .toLowerCase();
@@ -541,6 +542,7 @@ export class YahooPixelframeUploader extends HTMLElement {
         type,
         file,
         thumbnail,
+        name,
         id: this.#getUnitId(),
         ...(duration && { duration })
       };
@@ -685,11 +687,12 @@ export class YahooPixelframeUploader extends HTMLElement {
     if (!flag) {
       const results = this.#data.order.map(
         (key) => {
-          const { result, error, type } = this.#data.units[key];
+          const { result, error, type, name } = this.#data.units[key];
 
           return {
             id: key,
             type,
+            name,
             ...(result && { result }),
             ...(error && { error })
           };
